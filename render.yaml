@@ -12,10 +12,9 @@ services:
       - key: OPENAI_API_KEY
         sync: false
 
+staticSites:
   # Frontend Service
-  - type: static
-    name: token-analyzer-frontend
-    env: static
+  - name: token-analyzer-frontend
     buildCommand: npm install && npm run build
     publishPath: dist
     rootDir: frontend
