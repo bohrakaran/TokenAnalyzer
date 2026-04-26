@@ -39,7 +39,7 @@ class AnalysisResponse(BaseModel):
 
 async def count_tokens(text: str, model_name: str) -> int:
     # Use tiktoken for OpenAI models
-    if "gpt" in model_name:
+    if "gpt" in model_name.lower():
         try:
             encoding = tiktoken.encoding_for_model(model_name)
             return len(encoding.encode(text))
@@ -47,14 +47,19 @@ async def count_tokens(text: str, model_name: str) -> int:
             encoding = tiktoken.get_encoding("cl100k_base")
             return len(encoding.encode(text))
     
-    # Try Ollama for local models
+    # Handle Cloud-based Open Source models (for Recruiter Demos)
+    if "(cloud)" in model_name.lower():
+        # Llama 3 and others often use cl100k_base or similar
+        encoding = tiktoken.get_encoding("cl100k_base")
+        return len(encoding.encode(text))
+
+    # Try Ollama for local models only
     try:
-        # Using generate with num_predict=1 to get prompt_eval_count without generating much
         response = ollama.generate(model=model_name, prompt=text, options={"num_predict": 1})
         return response.get("prompt_eval_count", 0)
     except Exception as e:
-        print(f"Ollama error (falling back to tiktoken): {e}")
-        # Fallback for non-OpenAI or if Ollama is not running
+        print(f"Ollama error: {e}")
+        # Final fallback for demo purposes
         encoding = tiktoken.get_encoding("cl100k_base")
         return len(encoding.encode(text))
 
@@ -67,11 +72,11 @@ async def analyze_text(request: AnalysisRequest):
     token_count = await count_tokens(request.text, request.model)
     
     # Calculate cost
-    # Local models (Ollama) are free
-    is_local = any(m in request.model.lower() for m in ["llama", "mistral", "gemma", "phi", "qwen"])
+    # Local models and Cloud Demos are shown as free or low-cost
+    is_free = any(m in request.model.lower() for m in ["llama", "mistral", "gemma", "(cloud)"])
     
-    if is_local:
-        cost = 0.0
+    if is_free:
+        cost = 0.0 # Keeping cloud demos free for recruiter impression
     else:
         model_pricing = PRICING.get(request.model, {"prompt": 0.002, "completion": 0.002})
         cost = (token_count / 1000) * model_pricing["prompt"]

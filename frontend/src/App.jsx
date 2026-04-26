@@ -30,6 +30,8 @@ const models = [
   { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'OpenAI' },
   { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI' },
   { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI' },
+  { id: 'llama3-cloud', name: 'Llama 3 (Cloud Demo)', provider: 'Cloud' },
+  { id: 'mixtral-cloud', name: 'Mixtral (Cloud Demo)', provider: 'Cloud' },
   { id: 'llama3.2', name: 'Llama 3.2', provider: 'Ollama' },
   { id: 'gemma2', name: 'Gemma 2', provider: 'Ollama' },
   { id: 'mistral', name: 'Mistral', provider: 'Ollama' },
