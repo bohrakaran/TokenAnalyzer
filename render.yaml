@@ -12,7 +12,7 @@ services:
       - key: OPENAI_API_KEY
         sync: false
 
-staticSites:
+static_sites:
   # Frontend Service
   - name: token-analyzer-frontend
     buildCommand: npm install && npm run build
