@@ -1,9 +1,13 @@
 import tiktoken
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 import ollama
+
+load_dotenv()
 
 app = FastAPI(title="ChatGPT Token Usage Analyzer")
 
@@ -33,18 +37,24 @@ class AnalysisResponse(BaseModel):
     model: str
     character_count: int
 
-def count_tokens(text: str, model_name: str) -> int:
-    try:
-        # Use tiktoken for OpenAI models
-        if "gpt" in model_name:
+async def count_tokens(text: str, model_name: str) -> int:
+    # Use tiktoken for OpenAI models
+    if "gpt" in model_name:
+        try:
             encoding = tiktoken.encoding_for_model(model_name)
-        else:
-            # Fallback for non-OpenAI or general tokenization
+            return len(encoding.encode(text))
+        except Exception:
             encoding = tiktoken.get_encoding("cl100k_base")
-        
-        return len(encoding.encode(text))
+            return len(encoding.encode(text))
+    
+    # Try Ollama for local models
+    try:
+        # Using generate with num_predict=1 to get prompt_eval_count without generating much
+        response = ollama.generate(model=model_name, prompt=text, options={"num_predict": 1})
+        return response.get("prompt_eval_count", 0)
     except Exception as e:
-        # Fallback if model not found
+        print(f"Ollama error (falling back to tiktoken): {e}")
+        # Fallback for non-OpenAI or if Ollama is not running
         encoding = tiktoken.get_encoding("cl100k_base")
         return len(encoding.encode(text))
 
@@ -54,12 +64,17 @@ async def root():
 
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_text(request: AnalysisRequest):
-    token_count = count_tokens(request.text, request.model)
+    token_count = await count_tokens(request.text, request.model)
     
-    # Calculate cost (simplified)
-    # Default pricing if model not in dict
-    model_pricing = PRICING.get(request.model, {"prompt": 0.002, "completion": 0.002})
-    cost = (token_count / 1000) * model_pricing["prompt"]
+    # Calculate cost
+    # Local models (Ollama) are free
+    is_local = any(m in request.model.lower() for m in ["llama", "mistral", "gemma", "phi", "qwen"])
+    
+    if is_local:
+        cost = 0.0
+    else:
+        model_pricing = PRICING.get(request.model, {"prompt": 0.002, "completion": 0.002})
+        cost = (token_count / 1000) * model_pricing["prompt"]
     
     return {
         "tokens": token_count,
