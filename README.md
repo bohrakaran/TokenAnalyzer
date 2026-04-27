@@ -2,6 +2,10 @@
 
 **TokenAnalyzer** is a powerful full-stack application designed to help developers monitor, estimate, and visualize token consumption and costs for various AI models, including OpenAI and local Ollama instances.
 
+### 🌐 [Live Demo](https://token-analyzer-one.vercel.app/)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://token-analyzer-one.vercel.app/)
+
 ---
 
 ## ✨ Key Features
